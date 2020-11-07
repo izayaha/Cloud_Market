@@ -14,6 +14,8 @@ import com.iza.login.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * projectName:  CloudMarket
  *
@@ -45,8 +47,18 @@ public class LoginServiceImpl implements LoginService {
                 //用户账号密码正确
                 //生成token    用户账号
                 String token = JwtUtil.createToken(dto.getAccount());
-                //将token存放在redis服务器
-                RedissonUtil.setStr(token, "已登录", RedisKeyConfig.TOKEN_TIME);
+                //查看redis服务器是否存在
+                String str = RedissonUtil.getStr(token);
+                //用户刚登录
+                if (str != null) {
+                    //重置token有效期
+                    RedissonUtil.setTime(token,RedisKeyConfig.TOKEN_TIME, TimeUnit.SECONDS);
+                }else{
+                    //未登录过
+                    //将token存放在redis服务器
+                    RedissonUtil.setStr(token, "已登录", RedisKeyConfig.TOKEN_TIME);
+                }
+
                //将token返回
                 return R.ok(token);
 
